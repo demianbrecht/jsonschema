@@ -629,6 +629,7 @@ class RefResolver(object):
         handlers=(),
         urljoin_cache=None,
         remote_cache=None,
+        remote_timeout=1
     ):
         if urljoin_cache is None:
             urljoin_cache = lru_cache(1024)(urljoin)
@@ -649,6 +650,7 @@ class RefResolver(object):
 
         self._urljoin_cache = urljoin_cache
         self._remote_cache = remote_cache
+        self._remote_timeout = remote_timeout
 
     @classmethod
     def from_schema(cls, schema, id_of=_id_of, *args, **kwargs):
@@ -844,10 +846,10 @@ class RefResolver(object):
         elif scheme in [u"http", u"https"] and requests:
             # Requests has support for detecting the correct encoding of
             # json over http
-            result = requests.get(uri).json()
+            result = requests.get(uri, timeout=self._remote_timeout).json()
         else:
             # Otherwise, pass off to urllib and assume utf-8
-            with urlopen(uri) as url:
+            with urlopen(uri, timeout=self._remote_timeout) as url:
                 result = json.loads(url.read().decode("utf-8"))
 
         if self.cache_remote:
